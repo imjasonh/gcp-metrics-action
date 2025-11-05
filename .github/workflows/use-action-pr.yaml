@@ -1,4 +1,4 @@
-name: Use Action
+name: Use Action (PR)
 
 on:
   pull_request_target:
