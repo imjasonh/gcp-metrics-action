@@ -28,6 +28,14 @@ inputs:
     required: false
     default: 'github.actions'
 
+outputs:
+  traceparent:
+    description: 'W3C Trace Context (TRACEPARENT) for creating child spans in subsequent steps'
+  trace-id:
+    description: 'OpenTelemetry Trace ID'
+  span-id:
+    description: 'Root span ID for this job'
+
 runs:
   using: 'node20'
   main: 'dist/index.js'

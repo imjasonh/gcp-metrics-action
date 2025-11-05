@@ -328,6 +328,59 @@ https://console.cloud.google.com/traces/list?project=your-project-id
 - Understand step execution order
 - Correlate metrics with traces for deeper insights
 
+## Advanced: Creating Custom Trace Spans
+
+The action exports the root trace context so your workflow steps can create child spans:
+
+### Using the Trace Context
+
+The action sets the `TRACEPARENT` environment variable (W3C Trace Context format) that subsequent steps can use:
+
+```yaml
+steps:
+  - name: Setup Tracing
+    id: otel
+    uses: ./
+    with:
+      github-token: ${{ github.token }}
+      gcp-service-account-key-file: key.json
+
+  # TRACEPARENT is now available in environment
+  # Your application can use it to create child spans
+
+  - name: Your instrumented step
+    run: |
+      # The TRACEPARENT env var is automatically set
+      echo "Trace context: $TRACEPARENT"
+      # Your app can use this to create child spans under the job span
+```
+
+### Available Outputs
+
+- `traceparent` - W3C Trace Context header value (use this for most instrumentation)
+- `trace-id` - OpenTelemetry Trace ID (32-character hex string)
+- `span-id` - Root span ID for this job (16-character hex string)
+
+### Example: Node.js App with OpenTelemetry
+
+```yaml
+- uses: ./
+  id: otel-setup
+  with:
+    github-token: ${{ github.token }}
+    gcp-service-account-key-file: key.json
+
+- name: Run instrumented app
+  env:
+    # TRACEPARENT already set automatically
+    OTEL_EXPORTER_OTLP_ENDPOINT: https://your-collector:4318
+  run: |
+    # Your app reads TRACEPARENT and creates child spans
+    node my-app.js
+```
+
+Your application can use standard OpenTelemetry libraries to read `TRACEPARENT` and create child spans that will appear under the job span in Cloud Trace.
+
 ## Alternative: Using Workload Identity Federation (Recommended)
 
 Instead of service account keys, you can use Workload Identity Federation (WIF). This is the **recommended** approach for production as it doesn't require managing service account key files.
