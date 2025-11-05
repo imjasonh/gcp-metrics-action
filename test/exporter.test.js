@@ -72,14 +72,10 @@ test('createMeterProvider', async (t) => {
 test('recordMetrics', async (t) => {
   await t.test('should record step and job metrics', () => {
     const mockHistogramRecord = mock.fn();
-    const mockCounterAdd = mock.fn();
 
     const mockMeter = {
       createHistogram: mock.fn((name) => {
         return { record: mockHistogramRecord };
-      }),
-      createCounter: mock.fn((name) => {
-        return { add: mockCounterAdd };
       }),
     };
 
@@ -155,7 +151,7 @@ test('recordMetrics', async (t) => {
         id: 12345,
         status: 'in_progress',
         conclusion: null,
-        durationMs: 0,
+        durationMs: 100000, // Job duration always recorded now
       },
       steps: [
         {
@@ -192,7 +188,7 @@ test('recordMetrics', async (t) => {
 
     recordMetrics(mockMeter, metrics, 'test.prefix');
 
-    // Job duration is always recorded, even if 0
+    // Job duration is always recorded now (1 job)
     // Step has 0 duration, so it should not be recorded
     // Total histogram calls: 1 (just the job)
     assert.strictEqual(mockHistogramRecord.mock.calls.length, 1);
