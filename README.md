@@ -68,17 +68,40 @@ You have two options:
    rm github-actions-metrics-key.json
    ```
 
-**Option B: Commit the key file (For testing/demo only)**
+**Option B: Commit the key file (For private repos only)**
 
-If you're testing in a personal repository, you can commit the key file directly:
+You can commit the key file directly:
 
 ```bash
+# Set restrictive permissions (recommended)
+chmod 600 github-actions-metrics-key.json
+
 git add github-actions-metrics-key.json
 git commit -m "Add service account key for metrics"
 git push
 ```
 
-**⚠️ Warning:** Only do this in private repositories for testing. For production, always use secrets.
+**⚠️ Security Requirements:**
+- **MUST** be a private repository (action will refuse to run in public repos)
+- **Recommended:** File permissions should be `600` (owner read/write only)
+- **Warning:** For production, use GitHub Secrets or Workload Identity Federation instead
+
+The action includes built-in security checks:
+- ✓ Refuses to run if repository is public
+- ✓ Warns if key file has overly permissive file permissions
+- ✓ Verifies service account has ONLY `roles/monitoring.metricWriter`
+- ✓ Errors if service account has excessive permissions
+- ✓ Logs repository visibility status
+
+This is mainly intended to be used in `pull_request` workflows where secrets and workload identity federation are not available.
+
+**Service Account Permission Validation:**
+
+The action automatically calls the GCP IAM API to verify that the service account has only the minimal required permissions (`roles/monitoring.metricWriter`). If any additional roles are detected, the action will refuse to run and provide commands to remove the excessive permissions.
+
+This ensures the principle of least privilege is followed, even if the key file is accidentally exposed.
+
+*Note:* The service account needs permission to view IAM policies to perform this check. The `roles/monitoring.metricWriter` role includes the necessary `resourcemanager.projects.getIamPolicy` permission. If the check fails due to insufficient permissions, the action will log a warning and proceed without the check.
 
 ## Usage
 
@@ -121,8 +144,9 @@ jobs:
         uses: your-org/otel-action@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          gcp-project-id: ${{ secrets.GCP_PROJECT_ID }}
           gcp-service-account-key-file: /tmp/gcp-key.json
+          # gcp-project-id is automatically extracted from the service account key
+          # You can override it explicitly if needed: gcp-project-id: ${{ secrets.GCP_PROJECT_ID }}
 
       # Your regular workflow steps
       - name: Install dependencies
@@ -146,8 +170,8 @@ steps:
   - uses: your-org/otel-action@v1
     with:
       github-token: ${{ github.token }}
-      gcp-project-id: your-project-id
-      gcp-service-account-key-file: path/to/key.json
+      gcp-service-account-key-file: github-actions-metrics-key.json
+      # gcp-project-id is automatically extracted from the key file
 
   # Your workflow steps...
 ```
@@ -159,8 +183,10 @@ steps:
   uses: your-org/otel-action@v1
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
-    gcp-project-id: ${{ secrets.GCP_PROJECT_ID }}
     gcp-service-account-key-file: /tmp/gcp-key.json
+
+    # Optional: Override project ID (defaults to project from service account key)
+    # gcp-project-id: ${{ secrets.GCP_PROJECT_ID }}
 
     # Optional: Customize service name for resource attributes
     service-name: 'my-app-ci'

@@ -15,7 +15,7 @@ async function run() {
     core.info('Starting OpenTelemetry metrics collection post-action');
 
     // Get configuration
-    const config = getConfig();
+    const config = await getConfig();
 
     // Get GitHub token and create Octokit client
     const token = core.getInput('github-token', { required: true });

@@ -10,8 +10,8 @@ inputs:
     description: 'GitHub token for API access'
     required: true
   gcp-project-id:
-    description: 'Google Cloud Project ID where metrics will be exported'
-    required: true
+    description: 'Google Cloud Project ID where metrics will be exported (defaults to project from service account key)'
+    required: false
   gcp-service-account-key-file:
     description: 'Path to Google Cloud service account key JSON file (alternative to ADC/Workload Identity)'
     required: false
