@@ -288,6 +288,8 @@ Metrics will appear in Google Cloud Monitoring under custom metrics:
    - `custom.googleapis.com/github.actions/step.duration`
    - `custom.googleapis.com/github.actions/step.total`
 
+![Metrics in Cloud Monitoring](metrics.png)
+
 ### Example Queries
 
 **Average step duration by step name:**
@@ -316,6 +318,8 @@ Traces will appear in Google Cloud Trace:
    - Step spans showing individual step durations
    - Failed steps highlighted in red
    - Hover over spans to see attributes (workflow name, repository, etc.)
+
+![Traces in Cloud Trace](traces.png)
 
 **Trace URL format:**
 ```
