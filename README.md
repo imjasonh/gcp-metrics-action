@@ -1,16 +1,13 @@
 # OpenTelemetry Exporter for GitHub Actions
 
-A GitHub Action that collects workflow step metrics, traces, and logs, and exports them to Google Cloud Observability (Monitoring, Trace, and Logging).
+A GitHub Action that collects workflow step metrics and traces, and exports them to Google Cloud Monitoring and Cloud Trace.
 
 ## Features
 
 - 📊 **Metrics**: Duration histograms and success/failure counters for jobs and steps
 - 🔍 **Traces**: Distributed traces showing job and step execution timeline with parent-child relationships
-- 📝 **Logs**: Complete workflow output (stdout/stderr) with **original timestamps** from when each line was emitted
-- ⏱️ Accurate timing - all data (metrics, traces, logs) uses actual execution timestamps, not post-action time
-- ✅ Automatic error detection (failed steps marked as errors in traces/logs)
 - 🏷️ Rich attributes and labels (workflow, job, repository, run info, step attribution)
-- 🔒 Minimal permissions (only metric writer, trace agent, log writer)
+- 🔒 Minimal permissions (only metric writer and trace agent)
 - 🔄 Always runs (even when steps fail)
 
 ## Setup
@@ -26,7 +23,7 @@ PROJECT_ID="your-project-id"
 # Create the service account
 gcloud iam service-accounts create github-actions-otel \
   --display-name="GitHub Actions OpenTelemetry" \
-  --description="Service account for GitHub Actions to export OpenTelemetry metrics and traces" \
+  --description="Service account for GitHub Actions to export metrics and traces" \
   --project="${PROJECT_ID}"
 
 # Grant required roles
@@ -44,21 +41,14 @@ gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
   --role="roles/cloudtrace.agent" \
   --condition=None
 
-# For logs
-gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
-  --member="serviceAccount:${SA_EMAIL}" \
-  --role="roles/logging.logWriter" \
-  --condition=None
-
 # Create and download a JSON key
-gcloud iam service-accounts keys create github-actions-otel-key.json \
+gcloud iam service-accounts keys create github-actions-metrics-key.json \
   --iam-account="${SA_EMAIL}"
 ```
 
 **Roles explained:**
 - `roles/monitoring.metricWriter` - Write custom metrics to Cloud Monitoring
 - `roles/cloudtrace.agent` - Write traces to Cloud Trace
-- `roles/logging.logWriter` - Write logs to Cloud Logging
 
 ### 2. Add Service Account Key to GitHub
 
@@ -81,10 +71,6 @@ You have two options:
 
 6. Click **Add secret**
 
-7. Also add your GCP project ID as a secret:
-   - Name: `GCP_PROJECT_ID`
-   - Value: Your project ID (e.g., `jason-chainguard`)
-
 8. **Securely delete the key file:**
    ```bash
    rm github-actions-metrics-key.json
@@ -101,7 +87,7 @@ git push
 ```
 
 **⚠️ Security Requirements:**
-- **MUST** be a private repository (action will refuse to run in public repos)
+- **MUST** be a private repository (action will refuse to run this way in public repos)
 - **Warning:** For production, use GitHub Secrets or Workload Identity Federation instead
 
 The action includes built-in security checks:
@@ -206,8 +192,6 @@ steps:
     with:
       github-token: ${{ github.token }}
       gcp-service-account-key-file: github-actions-metrics-key.json
-      # gcp-project-id is automatically extracted from the key file
-
   # Your workflow steps...
 ```
 
@@ -343,60 +327,6 @@ https://console.cloud.google.com/traces/list?project=your-project-id
 - Identify bottlenecks visually
 - Understand step execution order
 - Correlate metrics with traces for deeper insights
-
-### Logs
-
-The action writes structured logs to Google Cloud Logging:
-
-**Detailed Logs (Best Effort):**
-The action attempts to fetch complete workflow output via the GitHub API. If available, you get:
-- Every line of stdout/stderr from your workflow
-- **Original timestamps** from when each line was emitted
-- Automatic severity detection (ERROR, WARNING, DEBUG, INFO)
-- Step attribution (which step generated each log line)
-
-**Summary Logs (Fallback):**
-If detailed logs aren't available via the API (common limitation), writes one entry per job/step with:
-- **Timestamp**: Job/step completion time (accurate, not post-action time)
-- **Severity**: INFO (success), ERROR (failure), WARNING (other)
-- **Structured data**: Job/step details (name, status, conclusion, duration)
-- **Labels**: workflow, repository, run info, job name, step name
-- **Resource type**: `generic_task`
-
-**Log name:** `github-actions`
-
-*Note: GitHub Actions API doesn't always expose job logs programmatically. The action will use whichever log format is available.*
-
-**Viewing logs:**
-1. Go to **Cloud Console → Logging → Logs Explorer**
-2. Query: `logName="projects/your-project-id/logs/github-actions"`
-3. Filter by repository, workflow, job, or step using labels
-
-**Example queries:**
-
-View all logs from a specific run:
-```
-logName="projects/your-project-id/logs/github-actions"
-labels.run_number="42"
-```
-
-Find errors during the workflow:
-```
-logName="projects/your-project-id/logs/github-actions"
-severity=ERROR
-```
-
-View logs for a specific step:
-```
-logName="projects/your-project-id/logs/github-actions"
-labels.step="npm test"
-```
-
-**Benefits:**
-- Complete workflow output preserved with accurate timestamps
-- Search and filter logs by step, workflow, repository
-- Correlate log errors with trace spans and metrics
-- Historical log retention in Cloud Logging (not just GitHub's 90 days)
 
 ## Alternative: Using Workload Identity Federation (Recommended)
 

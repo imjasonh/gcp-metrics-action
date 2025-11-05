@@ -1,7 +1,7 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 const { getConfig } = require('./lib/config');
-const { collectMetrics, collectLogs } = require('./lib/collector');
+const { collectMetrics } = require('./lib/collector');
 const {
   createMeterProvider,
   recordMetrics,
@@ -9,13 +9,11 @@ const {
   createTracerProvider,
   recordTraces,
   shutdownTracer,
-  createLogger,
-  recordLogs,
 } = require('./lib/exporter');
 
 /**
  * Post-action entry point
- * Collects workflow metrics/traces/logs and exports them to Google Cloud
+ * Collects workflow metrics and traces and exports them to Google Cloud
  */
 async function run() {
   let meterProvider;
@@ -34,17 +32,12 @@ async function run() {
     // Collect metrics from GitHub API
     const metrics = await collectMetrics(octokit, github.context);
 
-    // Collect detailed job logs
-    const logLines = await collectLogs(octokit, github.context, metrics.job.id);
-
-    // Initialize OpenTelemetry providers and Cloud Logging
+    // Initialize OpenTelemetry providers
     const { meterProvider: provider, meter } = createMeterProvider(config);
     meterProvider = provider;
 
     const { tracerProvider: tProvider, tracer } = createTracerProvider(config);
     tracerProvider = tProvider;
-
-    const { log } = createLogger(config);
 
     // Record metrics
     recordMetrics(meter, metrics, config.metricPrefix);
@@ -52,14 +45,11 @@ async function run() {
     // Record traces
     recordTraces(tracer, metrics);
 
-    // Record logs (with detailed log lines if available)
-    await recordLogs(log, metrics, logLines);
-
     // Force flush and shutdown to ensure data is exported
     await shutdown(meterProvider);
     await shutdownTracer(tracerProvider);
 
-    core.info('✓ Metrics, traces, and logs successfully exported to Google Cloud');
+    core.info('✓ Metrics and traces successfully exported to Google Cloud');
   } catch (error) {
     core.error(`Post-action failed: ${error.message}`);
     core.error(error.stack);
@@ -82,7 +72,7 @@ async function run() {
     }
 
     // Don't fail the workflow if export fails
-    core.warning('Telemetry export failed, but workflow will continue');
+    core.warning('Observability export failed, but workflow will continue');
   }
 }
 

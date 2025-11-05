@@ -1,5 +1,5 @@
 name: 'OpenTelemetry Exporter'
-description: 'Collects GitHub Actions workflow metrics, traces, and logs, and exports them to Google Cloud Observability'
+description: 'Collects GitHub Actions workflow metrics and traces, and exports them to Google Cloud Monitoring and Cloud Trace'
 author: 'Jason'
 branding:
   icon: 'activity'

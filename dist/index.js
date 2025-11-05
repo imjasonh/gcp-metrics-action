@@ -80,7 +80,6 @@ async function checkServiceAccountPermissions(projectId, serviceAccountEmail, cr
     const allowedRoles = [
       'roles/monitoring.metricWriter',
       'roles/cloudtrace.agent',
-      'roles/logging.logWriter',
     ];
     const excessiveRoles = serviceAccountRoles.filter(role => !allowedRoles.includes(role));
 
@@ -98,7 +97,6 @@ async function checkServiceAccountPermissions(projectId, serviceAccountEmail, cr
       core.error('This service account should ONLY have:');
       core.error('  - roles/monitoring.metricWriter (for metrics)');
       core.error('  - roles/cloudtrace.agent (for traces)');
-      core.error('  - roles/logging.logWriter (for logs)');
       core.error('');
       core.error('To fix, remove excessive roles:');
       excessiveRoles.forEach(role => {
@@ -126,7 +124,6 @@ async function checkServiceAccountPermissions(projectId, serviceAccountEmail, cr
     core.info('   Ensure the service account has ONLY:');
     core.info('     - roles/monitoring.metricWriter (for metrics)');
     core.info('     - roles/cloudtrace.agent (for traces)');
-    core.info('     - roles/logging.logWriter (for logs)');
     core.debug(`Permission check error: ${error.message}`);
   }
 }
