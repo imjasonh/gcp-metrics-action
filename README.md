@@ -346,24 +346,26 @@ https://console.cloud.google.com/traces/list?project=your-project-id
 
 ### Logs
 
-The action captures and writes **detailed workflow logs** to Google Cloud Logging:
+The action writes structured logs to Google Cloud Logging:
 
-**What gets logged:**
-- Every line of output from your workflow job (stdout/stderr)
-- Each log line includes its **original timestamp** from when it was emitted
+**Detailed Logs (Best Effort):**
+The action attempts to fetch complete workflow output via the GitHub API. If available, you get:
+- Every line of stdout/stderr from your workflow
+- **Original timestamps** from when each line was emitted
 - Automatic severity detection (ERROR, WARNING, DEBUG, INFO)
 - Step attribution (which step generated each log line)
 
-**Log entries include:**
-- **Timestamp**: Original time when the log line was emitted during the job (not post-action time!)
-- **Message**: The actual log output from the step
-- **Severity**: Auto-detected from log content (::error::, ::warning::, ERROR, WARNING)
+**Summary Logs (Fallback):**
+If detailed logs aren't available via the API (common limitation), writes one entry per job/step with:
+- **Timestamp**: Job/step completion time (accurate, not post-action time)
+- **Severity**: INFO (success), ERROR (failure), WARNING (other)
+- **Structured data**: Job/step details (name, status, conclusion, duration)
 - **Labels**: workflow, repository, run info, job name, step name
 - **Resource type**: `generic_task`
 
-**Fallback:** If detailed logs cannot be fetched, writes summary entries for each job and step.
-
 **Log name:** `github-actions`
+
+*Note: GitHub Actions API doesn't always expose job logs programmatically. The action will use whichever log format is available.*
 
 **Viewing logs:**
 1. Go to **Cloud Console → Logging → Logs Explorer**
