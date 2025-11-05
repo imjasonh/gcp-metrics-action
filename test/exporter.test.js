@@ -118,6 +118,18 @@ test('recordMetrics', async (t) => {
         number: 42,
         attempt: '1',
       },
+      git: {
+        sha: 'abc123',
+        ref: 'refs/heads/main',
+        refName: 'main',
+        baseRef: null,
+        headRef: null,
+      },
+      event: {
+        name: 'push',
+        actor: 'test-user',
+        prNumber: null,
+      },
     };
 
     recordMetrics(mockMeter, metrics, 'test.prefix');
@@ -172,6 +184,18 @@ test('recordMetrics', async (t) => {
         number: 42,
         attempt: '1',
       },
+      git: {
+        sha: 'abc123',
+        ref: 'refs/heads/main',
+        refName: 'main',
+        baseRef: null,
+        headRef: null,
+      },
+      event: {
+        name: 'push',
+        actor: 'test-user',
+        prNumber: null,
+      },
     };
 
     recordMetrics(mockMeter, metrics, 'test.prefix');
@@ -218,6 +242,18 @@ test('recordMetrics', async (t) => {
         id: 67890,
         number: 42,
         attempt: '1',
+      },
+      git: {
+        sha: 'abc123',
+        ref: 'refs/heads/main',
+        refName: 'main',
+        baseRef: null,
+        headRef: null,
+      },
+      event: {
+        name: 'push',
+        actor: 'test-user',
+        prNumber: null,
       },
     };
 

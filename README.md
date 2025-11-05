@@ -226,6 +226,16 @@ steps:
   - `run.id` - Workflow run ID
   - `run.number` - Workflow run number
   - `run.attempt` - Run attempt number
+  - `git.sha` - Commit SHA
+  - `git.ref` - Full ref (e.g., refs/heads/main, refs/pull/123/merge)
+  - `git.ref_name` - Short ref name (e.g., main, feature-branch) *
+  - `git.base_ref` - Base branch for PRs (e.g., main) *
+  - `git.head_ref` - Head branch for PRs (e.g., feature-branch) *
+  - `event.name` - Event that triggered workflow (push, pull_request, etc.)
+  - `event.actor` - User who triggered the workflow
+  - `pull_request.number` - PR number (if applicable) *
+
+\* = Optional attributes, only present when applicable
 
 #### Step Duration
 - **Metric:** `github.actions.step.duration`
@@ -295,6 +305,33 @@ custom.googleapis.com/github.actions/step.duration
 custom.googleapis.com/github.actions/step.total
 | filter metric.step.conclusion = "failure"
 | rate(1m)
+```
+
+**Metrics for a specific PR:**
+```
+custom.googleapis.com/github.actions/job.duration
+| filter metric.pull_request.number = "123"
+```
+
+**Build duration by branch:**
+```
+custom.googleapis.com/github.actions/job.duration
+| filter metric.git.ref_name != ""
+| group_by [metric.git.ref_name]
+| mean
+```
+
+**Metrics triggered by specific user:**
+```
+custom.googleapis.com/github.actions/step.duration
+| filter metric.event.actor = "username"
+```
+
+**Compare push vs pull_request performance:**
+```
+custom.googleapis.com/github.actions/job.duration
+| group_by [metric.event.name]
+| mean
 ```
 
 ### Viewing Traces
