@@ -27,10 +27,6 @@ inputs:
     description: 'Prefix for metric names'
     required: false
     default: 'github.actions'
-  export-interval-millis:
-    description: 'Export interval in milliseconds'
-    required: false
-    default: '1000'
 
 runs:
   using: 'node20'

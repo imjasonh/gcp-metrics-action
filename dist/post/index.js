@@ -138,17 +138,11 @@ function getConfig() {
     serviceName: core.getInput('service-name') || 'github-actions',
     serviceNamespace: core.getInput('service-namespace') || 'ci',
     metricPrefix: core.getInput('metric-prefix') || 'github.actions',
-    exportIntervalMillis: parseInt(core.getInput('export-interval-millis') || '1000', 10),
   };
 
   // Validate configuration
   if (!config.gcpProjectId) {
     throw new Error('gcp-project-id is required');
-  }
-
-  if (config.exportIntervalMillis < 1000) {
-    core.warning('export-interval-millis is too low, setting to 1000ms');
-    config.exportIntervalMillis = 1000;
   }
 
   // Log config without sensitive data
@@ -207,9 +201,12 @@ function createMeterProvider(config) {
 
   const exporter = new MetricExporter(exporterOptions);
 
+  // Note: We use PeriodicExportingMetricReader not for periodic exports,
+  // but because it handles metric aggregation and collection.
+  // We trigger export manually via forceFlush() in the shutdown function.
   const metricReader = new PeriodicExportingMetricReader({
     exporter,
-    exportIntervalMillis: config.exportIntervalMillis,
+    exportIntervalMillis: 60000, // Set high since we export manually via forceFlush()
   });
 
   const meterProvider = new MeterProvider({
@@ -301,22 +298,19 @@ function recordMetrics(meter, metrics, metricPrefix) {
  * @returns {Promise<void>}
  */
 async function shutdown(meterProvider) {
-  core.info('Flushing and shutting down MeterProvider');
+  core.info('Exporting metrics and shutting down MeterProvider');
   try {
-    core.info('Calling forceFlush...');
+    // forceFlush() triggers an immediate export and waits for completion
+    core.info('Triggering metric export...');
     await meterProvider.forceFlush();
-    core.info('forceFlush completed');
+    core.info('Metrics exported successfully');
 
-    // Add a delay to ensure metrics are fully exported
-    // This gives the exporter time to complete the async export
-    core.info('Waiting 3 seconds for metrics export to complete...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    core.info('Calling shutdown...');
+    // Shutdown the provider
+    core.info('Shutting down MeterProvider...');
     await meterProvider.shutdown();
     core.info('MeterProvider shut down successfully');
   } catch (error) {
-    core.error(`Error during shutdown: ${error.message}`);
+    core.error(`Error during export/shutdown: ${error.message}`);
     core.error(`Stack trace: ${error.stack}`);
     throw error;
   }

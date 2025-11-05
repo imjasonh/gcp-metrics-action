@@ -170,9 +170,6 @@ steps:
 
     # Optional: Customize metric name prefix
     metric-prefix: 'ci.metrics'
-
-    # Optional: Adjust export interval (milliseconds)
-    export-interval-millis: '1000'
 ```
 
 ## Metrics Collected
