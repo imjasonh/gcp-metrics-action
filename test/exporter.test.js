@@ -137,23 +137,15 @@ test('recordMetrics', async (t) => {
     // Verify histogram creation for job and step duration
     assert.strictEqual(mockMeter.createHistogram.mock.calls.length >= 2, true);
 
-    // Verify counter creation for step totals
-    assert.strictEqual(mockMeter.createCounter.mock.calls.length >= 1, true);
-
     // Verify histogram records were called (1 job + 2 steps = 3)
     assert.strictEqual(mockHistogramRecord.mock.calls.length, 3);
-
-    // Verify counter was called for each step
-    assert.strictEqual(mockCounterAdd.mock.calls.length, 2);
   });
 
   await t.test('should handle steps with zero duration', () => {
     const mockHistogramRecord = mock.fn();
-    const mockCounterAdd = mock.fn();
 
     const mockMeter = {
       createHistogram: mock.fn(() => ({ record: mockHistogramRecord })),
-      createCounter: mock.fn(() => ({ add: mockCounterAdd })),
     };
 
     const metrics = {
@@ -200,19 +192,17 @@ test('recordMetrics', async (t) => {
 
     recordMetrics(mockMeter, metrics, 'test.prefix');
 
-    // Job duration is 0, so it should not be recorded
-    // Step has 0 duration, so histogram should not record it
-    // But counter should still be called for the step
-    assert.strictEqual(mockCounterAdd.mock.calls.length, 1);
+    // Job duration is always recorded, even if 0
+    // Step has 0 duration, so it should not be recorded
+    // Total histogram calls: 1 (just the job)
+    assert.strictEqual(mockHistogramRecord.mock.calls.length, 1);
   });
 
   await t.test('should include correct attributes in metrics', () => {
     const mockHistogramRecord = mock.fn();
-    const mockCounterAdd = mock.fn();
 
     const mockMeter = {
       createHistogram: mock.fn(() => ({ record: mockHistogramRecord })),
-      createCounter: mock.fn(() => ({ add: mockCounterAdd })),
     };
 
     const metrics = {

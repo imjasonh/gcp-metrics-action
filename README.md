@@ -247,11 +247,6 @@ steps:
   - `step.status` - Status (completed, in_progress, etc.)
   - `step.conclusion` - Conclusion (success, failure, skipped, etc.)
 
-#### Step Count
-- **Metric:** `github.actions.step.total`
-- **Type:** Counter
-- **Labels:** Same as step duration
-
 ### Traces
 
 The action creates distributed traces showing the execution timeline of your workflow:
@@ -286,7 +281,6 @@ Metrics will appear in Google Cloud Monitoring under custom metrics:
 3. Available metrics:
    - `custom.googleapis.com/github.actions/job.duration`
    - `custom.googleapis.com/github.actions/step.duration`
-   - `custom.googleapis.com/github.actions/step.total`
 
 ![Metrics in Cloud Monitoring](metrics.png)
 
@@ -300,11 +294,11 @@ custom.googleapis.com/github.actions/step.duration
 | mean
 ```
 
-**Job failure rate:**
+**Job failure rate over time:**
 ```
-custom.googleapis.com/github.actions/step.total
-| filter metric.step.conclusion = "failure"
-| rate(1m)
+custom.googleapis.com/github.actions/job.duration
+| filter metric.job.conclusion = "failure"
+| group_by [], .rate(1h)
 ```
 
 **Metrics for a specific PR:**

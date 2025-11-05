@@ -171,4 +171,167 @@ test('collectMetrics', async (t) => {
       /API Error/
     );
   });
+
+  await t.test('should infer job conclusion as failure from failed steps', async () => {
+    const mockJobData = {
+      jobs: [
+        {
+          id: 12345,
+          name: 'test-job',
+          status: 'in_progress',
+          conclusion: null,
+          started_at: '2025-01-01T10:00:00Z',
+          completed_at: null,
+          steps: [
+            {
+              name: 'Step 1',
+              number: 1,
+              status: 'completed',
+              conclusion: 'success',
+              started_at: '2025-01-01T10:00:00Z',
+              completed_at: '2025-01-01T10:01:00Z',
+            },
+            {
+              name: 'Step 2',
+              number: 2,
+              status: 'completed',
+              conclusion: 'failure',
+              started_at: '2025-01-01T10:01:00Z',
+              completed_at: '2025-01-01T10:02:00Z',
+            },
+          ],
+        },
+      ],
+    };
+
+    const mockOctokit = {
+      rest: {
+        actions: {
+          listJobsForWorkflowRun: mock.fn(async () => ({ data: mockJobData })),
+        },
+      },
+    };
+
+    const mockContext = {
+      repo: { owner: 'test-owner', repo: 'test-repo' },
+      runId: 67890,
+      runNumber: 42,
+      workflow: 'CI',
+    };
+
+    process.env.GITHUB_JOB = 'test-job';
+
+    const metrics = await collectMetrics(mockOctokit, mockContext);
+
+    assert.strictEqual(metrics.job.conclusion, 'failure');
+    assert.strictEqual(metrics.job.status, 'in_progress');
+  });
+
+  await t.test('should infer job conclusion as success from successful steps', async () => {
+    const mockJobData = {
+      jobs: [
+        {
+          id: 12345,
+          name: 'test-job',
+          status: 'in_progress',
+          conclusion: null,
+          started_at: '2025-01-01T10:00:00Z',
+          completed_at: null,
+          steps: [
+            {
+              name: 'Step 1',
+              number: 1,
+              status: 'completed',
+              conclusion: 'success',
+              started_at: '2025-01-01T10:00:00Z',
+              completed_at: '2025-01-01T10:01:00Z',
+            },
+            {
+              name: 'Step 2',
+              number: 2,
+              status: 'completed',
+              conclusion: 'success',
+              started_at: '2025-01-01T10:01:00Z',
+              completed_at: '2025-01-01T10:02:00Z',
+            },
+          ],
+        },
+      ],
+    };
+
+    const mockOctokit = {
+      rest: {
+        actions: {
+          listJobsForWorkflowRun: mock.fn(async () => ({ data: mockJobData })),
+        },
+      },
+    };
+
+    const mockContext = {
+      repo: { owner: 'test-owner', repo: 'test-repo' },
+      runId: 67890,
+      runNumber: 42,
+      workflow: 'CI',
+    };
+
+    process.env.GITHUB_JOB = 'test-job';
+
+    const metrics = await collectMetrics(mockOctokit, mockContext);
+
+    assert.strictEqual(metrics.job.conclusion, 'success');
+  });
+
+  await t.test('should infer job conclusion as cancelled from cancelled steps', async () => {
+    const mockJobData = {
+      jobs: [
+        {
+          id: 12345,
+          name: 'test-job',
+          status: 'in_progress',
+          conclusion: null,
+          started_at: '2025-01-01T10:00:00Z',
+          completed_at: null,
+          steps: [
+            {
+              name: 'Step 1',
+              number: 1,
+              status: 'completed',
+              conclusion: 'success',
+              started_at: '2025-01-01T10:00:00Z',
+              completed_at: '2025-01-01T10:01:00Z',
+            },
+            {
+              name: 'Step 2',
+              number: 2,
+              status: 'completed',
+              conclusion: 'cancelled',
+              started_at: '2025-01-01T10:01:00Z',
+              completed_at: '2025-01-01T10:02:00Z',
+            },
+          ],
+        },
+      ],
+    };
+
+    const mockOctokit = {
+      rest: {
+        actions: {
+          listJobsForWorkflowRun: mock.fn(async () => ({ data: mockJobData })),
+        },
+      },
+    };
+
+    const mockContext = {
+      repo: { owner: 'test-owner', repo: 'test-repo' },
+      runId: 67890,
+      runNumber: 42,
+      workflow: 'CI',
+    };
+
+    process.env.GITHUB_JOB = 'test-job';
+
+    const metrics = await collectMetrics(mockOctokit, mockContext);
+
+    assert.strictEqual(metrics.job.conclusion, 'cancelled');
+  });
 });
