@@ -1,4 +1,4 @@
-# OpenTelemetry Exporter for GitHub Actions
+# GCP Metrics Exporter for GitHub Actions
 
 A GitHub Action that collects workflow step metrics and traces, and exports them to Google Cloud Monitoring and Cloud Trace.
 
@@ -132,14 +132,15 @@ This action supports two authentication methods:
 
 | Method | Best For | Works With | Setup Complexity |
 |--------|----------|------------|------------------|
-| **Service Account Key File** | Testing, forks, `pull_request` events | All workflow events | Simple - just create and store a key |
-| **Workload Identity Federation** | Production, security-conscious | `push`, `pull_request_target` only | Moderate - requires WIF setup |
+| **Service Account Key File** | Private repos, weaker security | `pull_request` only | Simplest - only supported for private repos |
+| **Service Account Key File (Secret)** | Production, good security | `push`, `pull_request_target` only | Simple - just create and store a key |
+| **Workload Identity Federation** | Production, best security | `push`, `pull_request_target` only | Moderate - requires WIF setup |
 
 **Quick Decision:**
-- Using `pull_request` from forks? → **Use Service Account Key File**
-- Production workflows on `push`? → **Use Workload Identity Federation**
+- Using `pull_request` from private forks? → **Use Service Account Key File**
+- Production workflows on `push`? → **Use GitHub Secret or Workload Identity Federation**
 
-### Basic Usage (with Secrets - Recommended)
+### Basic Usage (with Secrets)
 
 The simplest approach is to use GitHub Secrets directly:
 
@@ -171,7 +172,7 @@ jobs:
 
 ### Alternative: Using Committed Key File
 
-If you have the key file committed (for testing):
+If you have the key file committed to a _private repo_:
 
 ```yaml
 steps:
@@ -331,12 +332,11 @@ The action sets the `TRACEPARENT` environment variable (W3C Trace Context format
 
 ```yaml
 steps:
-  - name: Setup Tracing
-    id: otel
-    uses: ./
+  - uses: imjasonh/gcp-metrics-action@...
+    id: gcp-metrics
     with:
       github-token: ${{ github.token }}
-      gcp-service-account-key-file: key.json
+      gcp-service-account-key: ${{ secrets.SERVICE_ACCOUNT_KEY }}
 
   # TRACEPARENT is now available in environment
   # Your application can use it to create child spans
@@ -345,6 +345,7 @@ steps:
     run: |
       # The TRACEPARENT env var is automatically set
       echo "Trace context: $TRACEPARENT"
+      echo "Span ID: ${{ steps.gcp-metrics.outputs.span-id }}"
       # Your app can use this to create child spans under the job span
 ```
 
@@ -358,7 +359,6 @@ steps:
 
 ```yaml
 - uses: ./
-  id: otel-setup
   with:
     github-token: ${{ github.token }}
     gcp-service-account-key-file: key.json
@@ -419,7 +419,7 @@ jobs:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
-      # Setup metrics collection (no key file needed)
+      # Setup metrics collection
       - uses: imjasonh/gcp-metrics-action@...
         with:
           github-token: ${{ github.token }}
