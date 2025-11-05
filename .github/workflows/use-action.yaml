@@ -13,13 +13,14 @@ jobs:
 
     permissions:
       contents: read
+      actions: read
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: ./
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ github.token }}
           gcp-service-account-key: github-actions-metrics-key.json
 
       - uses: actions/setup-node@v4
