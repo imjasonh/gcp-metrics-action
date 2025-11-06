@@ -243,4 +243,53 @@ test('collectMetrics', async (t) => {
     const metrics = await collectMetrics(mockOctokit, mockContext);
     assert.strictEqual(metrics.job.conclusion, 'cancelled');
   });
+
+  await t.test('should handle PR context correctly', async () => {
+    const mockJobData = {
+      jobs: [{
+        id: 12345,
+        name: 'test-job',
+        status: 'completed',
+        conclusion: 'success',
+        started_at: '2025-01-01T10:00:00Z',
+        completed_at: '2025-01-01T10:05:00Z',
+        steps: [],
+      }],
+    };
+
+    const mockOctokit = { rest: { actions: { listJobsForWorkflowRun: mock.fn(async () => ({ data: mockJobData })) } } };
+    const mockContext = { 
+      repo: { owner: 'test-owner', repo: 'test-repo' }, 
+      runId: 67890, 
+      runNumber: 42, 
+      workflow: 'CI',
+      payload: { pull_request: { number: 123 } }
+    };
+    process.env.GITHUB_JOB = 'test-job';
+
+    const metrics = await collectMetrics(mockOctokit, mockContext);
+    assert.strictEqual(metrics.event.prNumber, 123);
+  });
+
+  await t.test('should handle missing runner labels', async () => {
+    const mockJobData = {
+      jobs: [{
+        id: 12345,
+        name: 'test-job',
+        status: 'completed',
+        conclusion: 'success',
+        started_at: '2025-01-01T10:00:00Z',
+        completed_at: '2025-01-01T10:05:00Z',
+        steps: [],
+        labels: [],
+      }],
+    };
+
+    const mockOctokit = { rest: { actions: { listJobsForWorkflowRun: mock.fn(async () => ({ data: mockJobData })) } } };
+    const mockContext = { repo: { owner: 'test-owner', repo: 'test-repo' }, runId: 67890, runNumber: 42, workflow: 'CI' };
+    process.env.GITHUB_JOB = 'test-job';
+
+    const metrics = await collectMetrics(mockOctokit, mockContext);
+    assert.strictEqual(metrics.runner.labels.length, 0);
+  });
 });

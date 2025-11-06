@@ -138,7 +138,7 @@ test('recordMetrics', async (t) => {
     const mockHistogramRecord = mock.fn();
 
     const mockMeter = {
-      createHistogram: mock.fn((name) => {
+      createHistogram: mock.fn(() => {
         return { record: mockHistogramRecord };
       }),
     };
