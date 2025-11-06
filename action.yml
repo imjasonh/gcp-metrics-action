@@ -12,11 +12,8 @@ inputs:
   gcp-project-id:
     description: 'Google Cloud Project ID where metrics will be exported (defaults to project from service account key)'
     required: false
-  gcp-service-account-key:
-    description: 'Google Cloud service account key JSON content (use with secrets)'
-    required: false
   gcp-service-account-key-file:
-    description: 'Path to Google Cloud service account key JSON file (use with committed files)'
+    description: 'Path to Google Cloud service account key JSON file'
     required: false
   service-name:
     description: 'Service name for OpenTelemetry resource attributes'

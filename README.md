@@ -21,13 +21,13 @@ Create a service account with minimal permissions to write metrics and traces:
 PROJECT_ID="your-project-id"
 
 # Create the service account
-gcloud iam service-accounts create github-actions-otel \
-  --display-name="GitHub Actions OpenTelemetry" \
+gcloud iam service-accounts create gcp-metrics-action \
+  --display-name="GCP Metrics Exporter for GitHub Actions" \
   --description="Service account for GitHub Actions to export metrics and traces" \
   --project="${PROJECT_ID}"
 
 # Grant required roles
-SA_EMAIL="github-actions-otel@${PROJECT_ID}.iam.gserviceaccount.com"
+SA_EMAIL="gcp-metrics-action@${PROJECT_ID}.iam.gserviceaccount.com"
 
 # For metrics
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
@@ -65,7 +65,7 @@ You have two options:
 
 3. Click **New repository secret**
 
-4. Name: `GCP_SERVICE_ACCOUNT_KEY`
+4. Name: `SERVICE_ACCOUNT_KEY` (or whatever you want)
 
 5. Value: Paste the entire JSON content
 
@@ -88,11 +88,11 @@ git push
 
 **⚠️ Security Requirements:**
 - **MUST** be a private repository (action will refuse to run this way in public repos)
-- **Warning:** For production, use GitHub Secrets or Workload Identity Federation instead
+- **Warning:** For production security or public repos, use GitHub Secrets or Workload Identity Federation instead
 
 The action includes built-in security checks:
 - ✓ Refuses to run if repository is public (checked via GitHub API)
-- ✓ **Best-effort:** Verifies service account has ONLY `roles/monitoring.metricWriter`
+- ✓ **Best-effort:** Verifies service account has minimal roles
 - ✓ Errors if excessive permissions are detected
 
 This is mainly intended to be used in `pull_request` workflows where secrets and workload identity federation are not available.
@@ -137,42 +137,12 @@ This action supports two authentication methods:
 | **Workload Identity Federation** | Production, best security | `push`, `pull_request_target` only | Moderate - requires WIF setup |
 
 **Quick Decision:**
-- Using `pull_request` from private forks? → **Use Service Account Key File**
+- Using `pull_request` from private forks? → **You can use Service Account Key File**
 - Production workflows on `push`? → **Use GitHub Secret or Workload Identity Federation**
 
-### Basic Usage (with Secrets)
+### Basic Usage (with Committed Key File)
 
-The simplest approach is to use GitHub Secrets directly:
-
-```yaml
-name: CI Pipeline
-
-on: [push, pull_request]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: imjasonh/gcp-metrics-action@...
-        with:
-          github-token: ${{ github.token }}
-          gcp-service-account-key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-          # gcp-project-id is automatically extracted from the service account key
-
-      # Your regular workflow steps
-      - run: npm install
-      - run: npm test
-      - run: npm run build
-
-      # Metrics and traces are automatically collected and exported after this job completes
-```
-
-### Alternative: Using Committed Key File
-
-If you have the key file committed to a _private repo_:
+For private repositories, you can commit the key file:
 
 ```yaml
 steps:
@@ -188,11 +158,9 @@ steps:
 ### Advanced Configuration
 
 ```yaml
-- name: Setup OpenTelemetry Metrics
-  uses: imjasonh/gcp-metrics-action@...
+- uses: imjasonh/gcp-metrics-action@...
   with:
     github-token: ${{ github.token }}
-    gcp-service-account-key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
     # Optional: Override project ID (defaults to project from service account key)
     # gcp-project-id: 'my-project-id'
@@ -460,7 +428,6 @@ steps:
     id: gcp-metrics
     with:
       github-token: ${{ github.token }}
-      gcp-service-account-key: ${{ secrets.SERVICE_ACCOUNT_KEY }}
 
   # TRACEPARENT is now available in environment
   # Your application can use it to create child spans
@@ -538,7 +505,7 @@ jobs:
 
       # Authenticate with GCP first
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
