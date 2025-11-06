@@ -20,5 +20,4 @@ jobs:
         with:
           python-version: '3.x'
       - run: pip install pre-commit
-      - run: pre-commit run --all-file
-      s
+      - run: pre-commit run --all-files
