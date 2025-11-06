@@ -185,6 +185,10 @@ For most use cases, you don't need to specify `gcp-project-id` explicitly.
 
     # Optional: Customize metric name prefix
     metric-prefix: 'ci.metrics'
+
+    # Optional: Fail workflow if metrics/traces export fails (default: false)
+    # Useful for production to ensure observability data is always captured
+    fail-on-error: true
 ```
 
 ## Data Collected

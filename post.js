@@ -83,8 +83,13 @@ async function run() {
       }
     }
 
-    // Don't fail the workflow if export fails
-    core.warning('Observability export failed, but workflow will continue');
+    // Decide whether to fail the workflow based on config
+    if (config.failOnError) {
+      const errorMsg = error?.message || error?.toString() || 'Unknown error';
+      core.setFailed(`Observability export failed: ${errorMsg}`);
+    } else {
+      core.warning('Observability export failed, but workflow will continue (set fail-on-error: true to fail on export errors)');
+    }
   }
 }
 
