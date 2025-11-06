@@ -5,10 +5,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 3
     groups:
-      # Group OpenTelemetry packages together
-      opentelemetry:
+      # Group all packages together
+      all:
         patterns:
           - "@opentelemetry/*"
         update-types:
