@@ -10,7 +10,18 @@ updates:
       # Group all packages together
       all:
         patterns:
-          - "*"
+          - "@opentelemetry/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group Google Cloud packages together
+      google-cloud:
+        patterns:
+          - "@google-cloud/*"
+    ignore:
+      # Ignore OpenTelemetry major versions (breaking changes)
+      - dependency-name: "@opentelemetry/*"
+        update-types: ["version-update:semver-major"]
 
   # Monitor GitHub Actions
   - package-ecosystem: "github-actions"
