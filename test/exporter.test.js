@@ -1,6 +1,6 @@
 const { test, mock } = require('node:test');
 const assert = require('node:assert');
-const { createMeterProvider, recordMetrics } = require('../lib/exporter');
+const { createMeterProvider, createTracerProvider, recordMetrics } = require('../lib/exporter');
 
 test('createMeterProvider', async (t) => {
   await t.test('should create MeterProvider with correct configuration', () => {
@@ -64,6 +64,70 @@ test('createMeterProvider', async (t) => {
 
     assert.throws(
       () => createMeterProvider(config),
+      /Invalid service account key JSON/
+    );
+  });
+});
+
+test('createTracerProvider', async (t) => {
+  await t.test('should create TracerProvider with correct configuration', () => {
+    const config = {
+      gcpProjectId: 'test-project',
+      serviceName: 'test-service',
+      serviceNamespace: 'test-namespace',
+      metricPrefix: 'test.prefix',
+    };
+
+    process.env.GITHUB_RUN_ID = '12345';
+
+    const { tracerProvider, tracer } = createTracerProvider(config);
+
+    assert.ok(tracerProvider, 'TracerProvider should be created');
+    assert.ok(tracer, 'Tracer should be created');
+  });
+
+  await t.test('should create TracerProvider with service account key', () => {
+    const serviceAccountKey = {
+      type: 'service_account',
+      project_id: 'test-project',
+      private_key_id: 'key-id',
+      private_key: '-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----\n',
+      client_email: 'test@test-project.iam.gserviceaccount.com',
+      client_id: '12345',
+      auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+      token_uri: 'https://oauth2.googleapis.com/token',
+      auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+    };
+
+    const config = {
+      gcpProjectId: 'test-project',
+      gcpServiceAccountKey: JSON.stringify(serviceAccountKey),
+      serviceName: 'test-service',
+      serviceNamespace: 'test-namespace',
+      metricPrefix: 'test.prefix',
+    };
+
+    process.env.GITHUB_RUN_ID = '12345';
+
+    const { tracerProvider, tracer } = createTracerProvider(config);
+
+    assert.ok(tracerProvider, 'TracerProvider should be created');
+    assert.ok(tracer, 'Tracer should be created');
+  });
+
+  await t.test('should throw error for invalid service account key JSON', () => {
+    const config = {
+      gcpProjectId: 'test-project',
+      gcpServiceAccountKey: 'invalid-json',
+      serviceName: 'test-service',
+      serviceNamespace: 'test-namespace',
+      metricPrefix: 'test.prefix',
+    };
+
+    process.env.GITHUB_RUN_ID = '12345';
+
+    assert.throws(
+      () => createTracerProvider(config),
       /Invalid service account key JSON/
     );
   });
