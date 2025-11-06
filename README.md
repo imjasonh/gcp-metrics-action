@@ -253,6 +253,23 @@ steps:
   - **Self-hosted runners:** Not recorded (cost = $0)
   - Ref: https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions
 
+**Benefits:**
+- Track cost trends for specific workflows over time
+- Alert on cost increase
+
+#### Repository Size
+- **Metric:** `github.actions.repo.size`
+- **Type:** Gauge
+- **Unit:** KB (kilobytes)
+- **Labels:** Same as job duration
+- **Note:** Records the current repository size at workflow run time
+
+**Benefits:**
+- Track repository growth over time
+- Correlate build performance with repository size
+- Alert when repository grows too large
+- Identify when to implement size optimizations
+
 #### Step Duration
 - **Metric:** `github.actions.step.duration`
 - **Type:** Histogram
@@ -311,6 +328,7 @@ Metrics will appear in Google Cloud Monitoring under custom metrics:
 3. Available metrics:
    - `custom.googleapis.com/github.actions/job.duration`
    - `custom.googleapis.com/github.actions/job.estimated_cost`
+   - `custom.googleapis.com/github.actions/repo.size`
    - `custom.googleapis.com/github.actions/step.duration`
    - `custom.googleapis.com/github.actions/artifact.size` (when artifacts available)
 

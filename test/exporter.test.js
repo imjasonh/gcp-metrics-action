@@ -340,4 +340,122 @@ test('recordMetrics', async (t) => {
     assert.strictEqual(artifactCalls[1].arguments[0], 2000);
     assert.strictEqual(artifactCalls[1].arguments[1]['artifact.name'], 'test-results');
   });
+
+  await t.test('should record repository size when available', () => {
+    const mockGaugeRecord = mock.fn();
+    const mockHistogramRecord = mock.fn();
+
+    const mockMeter = {
+      createHistogram: mock.fn(() => ({ record: mockHistogramRecord })),
+      createGauge: mock.fn(() => ({ record: mockGaugeRecord })),
+    };
+
+    const metrics = {
+      workflow: 'CI',
+      job: {
+        name: 'test-job',
+        id: 12345,
+        status: 'completed',
+        conclusion: 'success',
+        durationMs: 300000,
+      },
+      steps: [],
+      repository: {
+        owner: 'test-owner',
+        repo: 'test-repo',
+        fullName: 'test-owner/test-repo',
+        sizeKB: 2452, // Repository size in KB
+      },
+      run: {
+        id: 67890,
+        number: 42,
+        attempt: '1',
+      },
+      git: {
+        sha: 'abc123',
+        ref: 'refs/heads/main',
+        refName: 'main',
+        baseRef: null,
+        headRef: null,
+      },
+      event: {
+        name: 'push',
+        actor: 'test-user',
+        prNumber: null,
+      },
+      runner: {
+        os: 'Linux',
+        arch: 'X64',
+        name: 'Hosted Agent',
+        labels: ['ubuntu-latest'],
+      },
+    };
+
+    recordMetrics(mockMeter, metrics, 'test.prefix');
+
+    // Verify gauge was created for repo size
+    assert.strictEqual(mockMeter.createGauge.mock.calls.length, 1);
+    assert.strictEqual(mockMeter.createGauge.mock.calls[0].arguments[0], 'test.prefix.repo.size');
+
+    // Verify gauge record was called with repo size
+    assert.strictEqual(mockGaugeRecord.mock.calls.length, 1);
+    assert.strictEqual(mockGaugeRecord.mock.calls[0].arguments[0], 2452);
+  });
+
+  await t.test('should not record repository size when not available', () => {
+    const mockGaugeRecord = mock.fn();
+    const mockHistogramRecord = mock.fn();
+
+    const mockMeter = {
+      createHistogram: mock.fn(() => ({ record: mockHistogramRecord })),
+      createGauge: mock.fn(() => ({ record: mockGaugeRecord })),
+    };
+
+    const metrics = {
+      workflow: 'CI',
+      job: {
+        name: 'test-job',
+        id: 12345,
+        status: 'completed',
+        conclusion: 'success',
+        durationMs: 300000,
+      },
+      steps: [],
+      repository: {
+        owner: 'test-owner',
+        repo: 'test-repo',
+        fullName: 'test-owner/test-repo',
+        sizeKB: null, // No size available
+      },
+      run: {
+        id: 67890,
+        number: 42,
+        attempt: '1',
+      },
+      git: {
+        sha: 'abc123',
+        ref: 'refs/heads/main',
+        refName: 'main',
+        baseRef: null,
+        headRef: null,
+      },
+      event: {
+        name: 'push',
+        actor: 'test-user',
+        prNumber: null,
+      },
+      runner: {
+        os: 'Linux',
+        arch: 'X64',
+        name: 'Hosted Agent',
+        labels: ['ubuntu-latest'],
+      },
+    };
+
+    recordMetrics(mockMeter, metrics, 'test.prefix');
+
+    // Verify gauge was NOT created when size is null
+    assert.strictEqual(mockMeter.createGauge.mock.calls.length, 0);
+    assert.strictEqual(mockGaugeRecord.mock.calls.length, 0);
+  });
 });
