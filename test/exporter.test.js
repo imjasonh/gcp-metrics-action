@@ -126,15 +126,26 @@ test('recordMetrics', async (t) => {
         actor: 'test-user',
         prNumber: null,
       },
+      runner: {
+        os: 'Linux',
+        arch: 'X64',
+        name: 'Hosted Agent',
+        labels: ['ubuntu-latest'],
+      },
     };
 
     recordMetrics(mockMeter, metrics, 'test.prefix');
 
-    // Verify histogram creation for job and step duration
-    assert.strictEqual(mockMeter.createHistogram.mock.calls.length >= 2, true);
+    // Verify histogram creation for job, cost, and step duration
+    assert.strictEqual(mockMeter.createHistogram.mock.calls.length >= 3, true);
 
-    // Verify histogram records were called (1 job + 2 steps = 3)
-    assert.strictEqual(mockHistogramRecord.mock.calls.length, 3);
+    // Verify histogram records were called (1 job + 1 cost + 2 steps = 4)
+    assert.strictEqual(mockHistogramRecord.mock.calls.length, 4);
+
+    // Verify cost was calculated (second call should be the cost metric)
+    const costCall = mockHistogramRecord.mock.calls[1];
+    assert.ok(costCall.arguments[0] > 0, 'Cost should be greater than 0');
+    assert.ok(costCall.arguments[0] < 1, 'Cost should be less than $1 for 5 minute job on Linux');
   });
 
   await t.test('should handle steps with zero duration', () => {
@@ -184,14 +195,21 @@ test('recordMetrics', async (t) => {
         actor: 'test-user',
         prNumber: null,
       },
+      runner: {
+        os: 'Linux',
+        arch: 'X64',
+        name: 'Hosted Agent',
+        labels: ['ubuntu-latest'],
+      },
     };
 
     recordMetrics(mockMeter, metrics, 'test.prefix');
 
-    // Job duration is always recorded now (1 job)
+    // Job duration is always recorded (1 job)
+    // Cost metric is also recorded (1 cost)
     // Step has 0 duration, so it should not be recorded
-    // Total histogram calls: 1 (just the job)
-    assert.strictEqual(mockHistogramRecord.mock.calls.length, 1);
+    // Total histogram calls: 2 (job + cost)
+    assert.strictEqual(mockHistogramRecord.mock.calls.length, 2);
   });
 
   await t.test('should include correct attributes in metrics', () => {
@@ -240,6 +258,12 @@ test('recordMetrics', async (t) => {
         name: 'push',
         actor: 'test-user',
         prNumber: null,
+      },
+      runner: {
+        os: 'Linux',
+        arch: 'X64',
+        name: 'Hosted Agent',
+        labels: ['ubuntu-latest'],
       },
     };
 

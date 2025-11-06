@@ -234,8 +234,24 @@ steps:
   - `event.name` - Event that triggered workflow (push, pull_request, etc.)
   - `event.actor` - User who triggered the workflow
   - `pull_request.number` - PR number (if applicable) *
+  - `runner.os` - Runner operating system (Linux, Windows, macOS)
+  - `runner.arch` - Runner architecture (X64, ARM64, etc.)
+  - `runner.name` - Runner name *
+  - `runner.label` - Primary runner label (e.g., ubuntu-latest, ubuntu-4-cores) *
 
 \* = Optional attributes, only present when applicable
+
+#### Job Estimated Cost
+- **Metric:** `github.actions.job.estimated_cost`
+- **Type:** Histogram
+- **Unit:** USD
+- **Labels:** Same as job duration
+- **Note:** Only recorded when runner OS is known. Automatically calculates cost based on:
+  - **Standard runners:** Linux: $0.008/min, Windows: $0.016/min, macOS: $0.08/min
+  - **Larger runners:** Detected from runner label (e.g., ubuntu-4-cores, ubuntu-8-cores)
+    - Pricing scales from $0.016/min (2-cores) to $1.024/min (64-cores Windows)
+  - **Self-hosted runners:** Not recorded (cost = $0)
+  - Ref: https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions
 
 #### Step Duration
 - **Metric:** `github.actions.step.duration`
@@ -294,6 +310,7 @@ Metrics will appear in Google Cloud Monitoring under custom metrics:
 2. Search for: `custom.googleapis.com/github.actions`
 3. Available metrics:
    - `custom.googleapis.com/github.actions/job.duration`
+   - `custom.googleapis.com/github.actions/job.estimated_cost`
    - `custom.googleapis.com/github.actions/step.duration`
    - `custom.googleapis.com/github.actions/artifact.size` (when artifacts available)
 
@@ -355,6 +372,35 @@ custom.googleapis.com/github.actions/artifact.size
 custom.googleapis.com/github.actions/artifact.size
 | group_by [metric.artifact.name]
 | count
+```
+
+**Total CI costs:**
+```
+custom.googleapis.com/github.actions/job.estimated_cost
+| sum
+```
+
+**Monthly CI costs by runner type:**
+```
+custom.googleapis.com/github.actions/job.estimated_cost
+| group_by [metric.runner.os, metric.runner.label]
+| sum
+```
+
+**Most expensive workflows:**
+```
+custom.googleapis.com/github.actions/job.estimated_cost
+| group_by [metric.workflow.name]
+| sum
+| top 10
+```
+
+**Most expensive jobs:**
+```
+custom.googleapis.com/github.actions/job.estimated_cost
+| group_by [metric.job.name]
+| sum
+| top 10
 ```
 
 ### Viewing Traces
