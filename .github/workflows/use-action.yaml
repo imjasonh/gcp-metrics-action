@@ -16,14 +16,15 @@ jobs:
       actions: read  # To view this workflow's metadata and logs
 
     steps:
-      - uses: 'google-github-actions/auth@v3'
-        with:
-          credentials_json: '${{ secrets.SERVICE_ACCOUNT_KEY }}'
-
       - uses: actions/checkout@v5
         with:
           # For pull_request_target, checkout the PR head to test the PR's code
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: 'google-github-actions/auth@v3'
+        with:
+          credentials_json: '${{ secrets.SERVICE_ACCOUNT_KEY }}'
+          cleanup_credentials: false # Needed for subsequent steps
 
       - uses: ./
         with:
