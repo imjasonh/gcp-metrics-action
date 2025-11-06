@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "node --test test/collector.test.js test/exporter.test.js",
-    "build": "ncc build index.js -o dist && ncc build post.js -o dist/post"
+    "build": "ncc build index.js -o dist && ncc build post.js -o dist/post",
+    "lint": "eslint ."
   },
   "keywords": [
     "github-actions",
@@ -29,6 +30,9 @@
     "google-auth-library": "^10.5.0"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.38.1"
+    "@eslint/js": "^9.39.1",
+    "@vercel/ncc": "^0.38.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0"
   }
 }

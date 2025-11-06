@@ -1,6 +1,13 @@
 repos:
   - repo: local
     hooks:
+      - id: npm-lint
+        name: Run npm lint
+        entry: npm run lint
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
       - id: npm-test
         name: Run npm test
         entry: npm test

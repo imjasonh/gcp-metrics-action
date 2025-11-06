@@ -18,12 +18,13 @@ const {
 async function run() {
   let meterProvider;
   let tracerProvider;
+  let config;
 
   try {
     core.info('Starting OpenTelemetry data collection post-action');
 
     // Get configuration
-    const config = await getConfig();
+    config = await getConfig();
 
     // Get GitHub token and create Octokit client
     const token = core.getInput('github-token', { required: true });
@@ -84,7 +85,9 @@ async function run() {
     }
 
     // Decide whether to fail the workflow based on config
-    if (config.failOnError) {
+    // Note: config might not be defined if error occurred before getConfig()
+    const shouldFail = config?.failOnError || false;
+    if (shouldFail) {
       const errorMsg = error?.message || error?.toString() || 'Unknown error';
       core.setFailed(`Observability export failed: ${errorMsg}`);
     } else {
