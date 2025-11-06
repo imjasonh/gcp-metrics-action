@@ -234,8 +234,12 @@ steps:
   - `event.name` - Event that triggered workflow (push, pull_request, etc.)
   - `event.actor` - User who triggered the workflow
   - `pull_request.number` - PR number (if applicable) *
+  - `artifacts.count` - Number of artifacts uploaded *
+  - `artifacts.total_bytes` - Total size of artifacts in bytes *
 
 \* = Optional attributes, only present when applicable
+
+**Note on artifacts:** The action attempts to list artifacts, but they are typically not available until after the workflow completes. If artifacts are found (e.g., in rare cases or future GitHub API improvements), they will be included as attributes.
 
 #### Step Duration
 - **Metric:** `github.actions.step.duration`

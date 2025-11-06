@@ -30,4 +30,19 @@ jobs:
       - run: npm install
       - run: npm run lint || echo "No lint script configured"
       - run: npm test
+
+      - name: Create test artifact
+        run: |
+          mkdir -p build-output
+          echo "Build artifacts from run ${{ github.run_number }}" > build-output/results.txt
+          echo "Generated at $(date)" >> build-output/results.txt
+          ls -lh build-output/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-build-output
+          path: build-output/
+          retention-days: 1
+
       - run: echo "Building project..." && sleep 5 && echo "Build complete"

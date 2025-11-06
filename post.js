@@ -1,7 +1,7 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 const { getConfig } = require('./lib/config');
-const { collectMetrics } = require('./lib/collector');
+const { collectMetrics, collectArtifacts } = require('./lib/collector');
 const {
   createMeterProvider,
   recordMetrics,
@@ -31,6 +31,18 @@ async function run() {
 
     // Collect metrics from GitHub API
     const metrics = await collectMetrics(octokit, github.context);
+
+    // Check for artifacts (likely won't find any while job is running)
+    const artifacts = await collectArtifacts(octokit, github.context);
+
+    // Add artifact info to metrics if found
+    if (artifacts.length > 0) {
+      metrics.artifacts = {
+        count: artifacts.length,
+        totalBytes: artifacts.reduce((sum, a) => sum + a.sizeBytes, 0),
+        names: artifacts.map(a => a.name),
+      };
+    }
 
     // Initialize OpenTelemetry providers
     const { meterProvider: provider, meter } = createMeterProvider(config);
