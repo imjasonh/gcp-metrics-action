@@ -2,6 +2,10 @@
 
 A GitHub Action that collects workflow step metrics and traces, and exports them to Google Cloud Monitoring and Cloud Trace.
 
+[![Use Action](https://github.com/imjasonh/gcp-metrics-action/actions/workflows/use-action.yaml/badge.svg)](https://github.com/imjasonh/gcp-metrics-action/actions/workflows/use-action.yaml)
+
+See working example workflow: [use-action.yaml](./.github/workflows/use-action.yaml)
+
 ## Features
 
 - 📊 **Metrics**: Duration histograms and success/failure counters for jobs and steps
