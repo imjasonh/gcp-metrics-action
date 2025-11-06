@@ -22,14 +22,14 @@ jobs:
           # For pull_request_target, checkout the PR head to test the PR's code
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - uses: 'google-github-actions/auth@v3'
-        with:
-          credentials_json: '${{ secrets.SERVICE_ACCOUNT_KEY }}'
-
       - uses: ./
         with:
           github-token: ${{ github.token }}
           fail-on-error: 'true'
+
+      - uses: 'google-github-actions/auth@v3'
+        with:
+          credentials_json: '${{ secrets.SERVICE_ACCOUNT_KEY }}'
 
       - uses: actions/setup-node@v6
         with:
