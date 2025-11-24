@@ -17,7 +17,7 @@ jobs:
 
     steps:
       # ⚠️ When using credentials_json, you must check out the code first!!
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           # For pull_request_target, checkout the PR head to test the PR's code
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
